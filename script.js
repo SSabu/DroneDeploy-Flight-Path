@@ -1,18 +1,174 @@
-let shapefile = '../shapefiles/trial2';
 let data = {};
 
-function getGeoJson(geojson) {
-  data.bbox = geojson.features[0].geometry.bbox,
-  data.coordinates = geojson.features[0].geometry.coordinates,
-  data.type = geojson.features[0].geometry.type,
-  data.orderedCoordinates = geojson.features[0].geometry.coordinates;
+let modal = $("#myModal")[0];
 
-// remove duplicate coordinates and elevation point for array of coordinates
-  data.orderedCoordinates = removeDuplicates(data.orderedCoordinates);
-  data.orderedCoordinates.forEach((coordinate) => coordinate.splice(2));
+let span = $(".close")[0];
 
-  return data;
+// jQuery event handler functions
+// display selected file in input text box and verify filetype
+
+$("#input")[0].onchange = function() {
+
+  if (window.File && window.FileReader && window.FileList && window.Blob) {
+    // Great, all File APIs are supported
+  } else {
+    alert("The File APIs are not supported on this browser");
+  }
+
+  $("#upload")[0].value = this.value.substring(12);
+  var file = $("#input")[0].files[0];
+  checkFile(file.name);
+};
+
+// close modal if opened
+
+span.onclick = function() {
+  modal.style.display = "none";
 }
+
+window.onclick = function(event) {
+  if (event.target === modal) {
+    modal.style.display = "none";
+  }
+};
+
+// verify that file has useable data on submitting
+
+$("#verify")[0].onclick = function() {
+
+  if (window.File && window.FileReader && window.FileList && window.Blob) {
+    // Great, all File APIs are supported
+  } else {
+    alert("The File APIs are not supported on this browser");
+  }
+
+  var file = $("#input")[0].files[0];
+
+  channelFile(file)
+
+}
+
+
+// check filetype and display error message if not an accepted type
+
+function checkFile(file) {
+  var extension = file.substr((file.lastIndexOf('.')+1));
+  if (!/(shp|zip|kml)$/ig.test(extension)) {
+    modal.style.display = "block";
+    $(".modal-paragraph")[0].innerHTML = "Invalid file type: "+extension+". Please use a .shp, .kml, or .zip file.";
+  }
+};
+
+
+// read file after submitting, one for KML and one for SHP and ZIP due to different type required per the separate libraries
+
+function readKMLFile(file) {
+  return new Promise(function(succeed, fail) {
+    var reader = new FileReader();
+    reader.addEventListener("load", function() {
+      succeed(reader.result);
+    });
+    reader.addEventListener("error", function() {
+      fail(reader.error);
+    });
+    reader.readAsDataURL(file);
+  })
+}
+
+function readFile(file) {
+  return new Promise(function(succeed, fail) {
+    var reader = new FileReader();
+    reader.addEventListener("load", function() {
+      succeed(reader.result);
+    });
+    reader.addEventListener("error", function() {
+      fail(reader.error);
+    });
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// KML to geoJSON per library syntax
+
+function getKMLGeo(xml) {
+  return toGeoJSON.kml(xml);
+}
+
+function fromKML(kml) {
+  return $.ajax(kml).done(getKMLGeo).fail(function(){
+    modal.style.display = "block";
+    $(".modal-paragraph")[0].innerHTML = "Unsupported file type.  Please submit different file.";
+  })
+}
+
+// SHP to geoJSON per library syntax
+
+let geoObject = {};
+
+function shpToGeo(shape) {
+  let geoArr = [];
+  return shapefile.openShp(shape)
+  .then(source => source.read()
+    .then(function log(result) {
+      if (result.done) return;
+      geoArr.push(result.value);
+      source.read().then(log);
+      return geoArr;
+    }))
+    .then(geoObject)
+    .then(console.log)
+    .catch(error => console.error(error.stack));
+};
+
+function createGeoObject(array) {
+  geoObject.coordinates = array[0].coordinates;
+  return geoObject;
+};
+
+console.log('GEO OBJET', geoObject);
+
+// ZIP to geoJSON per library syntax  -- may not need
+
+// based on file type create geoJSON and verify that file is useable
+
+function channelFile(file) {
+  let fileName = file.name;
+  let extension = fileName.substr((fileName.lastIndexOf('.') +1));
+  if (/(shp)$/ig.test(extension)) {
+    readFile(file).then(shpToGeo)
+    .then(console.log);
+    // need to check data -- work that out
+  }
+
+  if(/(kml)$/ig.test(extension)) {
+    readKMLFile(file).then(fromKML).then(getKMLGeo)
+    .then(console.log);
+    // need to check data -- work that out
+  }
+
+  if (/(zip)$/ig.test(extension)) {
+    readFile(file).then(function(result) {
+      shp(result).then(console.log);
+      // need to check data -- work that out ...here
+    })
+    // or here ...?
+  }
+};
+
+// old getGeoJson
+
+// function getGeoJson(geojson) {
+//   data.bbox = geojson.features[0].geometry.bbox,
+//   data.coordinates = geojson.features[0].geometry.coordinates,
+//   data.type = geojson.features[0].geometry.type,
+//   data.orderedCoordinates = geojson.features[0].geometry.coordinates;
+//
+// // remove duplicate coordinates and elevation point for array of coordinates
+//   data.orderedCoordinates = removeDuplicates(data.orderedCoordinates);
+//   data.orderedCoordinates.forEach((coordinate) => coordinate.splice(2));
+//
+//   return data;
+// }
 
 // get coordinates for parallel lines approximately 220 feet from each other
 
@@ -207,7 +363,6 @@ function createPath(bbox, orderedIntersections, orderedCoordinates) {
   }
 
   newPath.push(newIntersections[i], newIntersections[i+1]);
-
 }
 
   data.newPath = newPath;
@@ -216,12 +371,11 @@ function createPath(bbox, orderedIntersections, orderedCoordinates) {
 }
 
 
-
-shp(shapefile).then(getGeoJson)
-  .then(findIntersections)
-  .then(orderIntersections)
-  .then(createPath)
-  .then(console.log)
-  .catch(err=>console.log(err));
-
-  console.log('THIS IS DATA',data);
+// shp(shapefile).then(getGeoJson)
+//   .then(findIntersections)
+//   .then(orderIntersections)
+//   .then(createPath)
+//   .then(console.log)
+//   .catch(err=>console.log(err));
+//
+//   console.log('THIS IS DATA',data);
