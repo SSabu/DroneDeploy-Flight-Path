@@ -1,11 +1,12 @@
 let data = {};
 
-let modal = $("#myModal")[0];
+var modal = $("#myModal")[0];
 
-let span = $(".close")[0];
+var span = $(".close")[0];
 
 // jQuery event handler functions
-// display selected file in input text box and verify filetype
+
+// display selected file in input text box and verify filetype on file Upload
 
 $("#input")[0].onchange = function() {
 
@@ -32,7 +33,7 @@ window.onclick = function(event) {
   }
 };
 
-// verify that file has useable data on submitting
+// verify that file has useable data on clicking Submit button
 
 $("#verify")[0].onclick = function() {
 
@@ -97,7 +98,7 @@ function getKMLGeo(xml) {
 function fromKML(kml) {
   return $.ajax(kml).done(getKMLGeo).fail(function(){
     modal.style.display = "block";
-    $(".modal-paragraph")[0].innerHTML = "Unsupported file type.  Please submit different file.";
+    $(".modal-paragraph")[0].innerHTML = "Unable to read file. Please submit a different file.";
   })
 }
 
@@ -116,12 +117,11 @@ function shpToGeo(shape) {
       return geoArr;
     }))
     .then(geoObject)
-    .then(console.log)
     .catch(error => console.error(error.stack));
 };
 
 function createGeoObject(array) {
-  geoObject.coordinates = array[0].coordinates;
+  geoObject.geojson = array;
   return geoObject;
 };
 
@@ -129,29 +129,103 @@ console.log('GEO OBJET', geoObject);
 
 // ZIP to geoJSON per library syntax  -- may not need
 
+function zipToGeo(zip) {
+  return shp(zip).then(function(geojson) {
+    return geojson;
+  })
+}
+
+// check data
+// 2 functions, checkData for .zip & .kml since geojson is value of the features key while checkShpData since geojson is pushed to an array
+
+function checkData(data) {
+
+  if(data.features.length===0){
+    modal.style.display = "block";
+    $(".modal-paragraph")[0].innerHTML = 'GeoJSON has no coordinates. Please submit a file with at least one feature.';
+    return false;
+  }
+
+  let geojson = data.features[0];
+
+  if (!geojson.geometry.coordinates[0][0].length) {
+
+    if ( (geojson.geometry.coordinates[0][0]>180 || geojson.geometry.coordinates[0][0]<-180) ||
+    (geojson.geometry.coordinates[0][1]>90 || geojson.geometry.coordinates[0][1]<-90) ) {
+      modal.style.display = "block";
+        $(".modal-paragraph")[0].innerHTML = 'Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.';
+      return false;
+    }
+  } else if ( (geojson.geometry.coordinates[0][0][0]>180 || geojson.geometry.coordinates[0][0][0]<-180) ||
+  (geojson.geometry.coordinates[0][0][1]>90 || geojson.geometry.coordinates[0][0][1]<-90) ) {
+    modal.style.display = "block";
+      $(".modal-paragraph")[0].innerHTML = 'Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.';
+    return false;
+  }
+
+  return true;
+
+
+}
+
+function checkShpData(data) {
+
+  let geojson = data[0];
+
+  if(geojson.coordinates.length===0){
+    modal.style.display = "block";
+      $(".modal-paragraph")[0].innerHTML = 'GeoJSON has no coordinates. Please submit a file with at least one feature.';
+    return false;
+  }
+
+  if (!geojson.coordinates[0][0].length) {
+
+    if ( (geojson.coordinates[0][0]>180 || geojson.coordinates[0][0]<-180) ||
+    (geojson.coordinates[0][1]>90 || geojson.coordinates[0][1]<-90) ) {
+      modal.style.display = "block";
+        $(".modal-paragraph")[0].innerHTML = 'Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.';
+
+      return false;
+    }
+
+  } else if ( (geojson.coordinates[0][0][0]>180 || geojson.coordinates[0][0][0]<-180) ||
+  (geojson.coordinates[0][0][1]>90 || geojson.coordinates[0][0][1]<-90) ) {
+    modal.style.display = "block";
+      $(".modal-paragraph")[0].innerHTML = 'Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.';
+
+    return false;
+  }
+
+  return true;
+
+}
+
+
+function displayCreatePlan(boolean){
+
+  var checkGo = $(".check-go")[0];
+
+  if(boolean){
+    checkGo.style.display = "block";
+  }
+}
+
+
 // based on file type create geoJSON and verify that file is useable
 
 function channelFile(file) {
   let fileName = file.name;
   let extension = fileName.substr((fileName.lastIndexOf('.') +1));
   if (/(shp)$/ig.test(extension)) {
-    readFile(file).then(shpToGeo)
-    .then(console.log);
-    // need to check data -- work that out
+    readFile(file).then(shpToGeo).then(checkShpData).then(displayCreatePlan);
   }
 
   if(/(kml)$/ig.test(extension)) {
-    readKMLFile(file).then(fromKML).then(getKMLGeo)
-    .then(console.log);
-    // need to check data -- work that out
+    readKMLFile(file).then(fromKML).then(getKMLGeo).then(checkData).then(displayCreatePlan);
   }
 
   if (/(zip)$/ig.test(extension)) {
-    readFile(file).then(function(result) {
-      shp(result).then(console.log);
-      // need to check data -- work that out ...here
-    })
-    // or here ...?
+    readFile(file).then(zipToGeo).then(checkData).then(displayCreatePlan);
   }
 };
 
