@@ -1,4 +1,4 @@
-let data = {};
+let geoData = {};
 
 var modal = $("#myModal")[0];
 
@@ -6,7 +6,7 @@ var span = $(".close")[0];
 
 // jQuery event handler functions
 
-// display selected file in input text box and verify filetype on file Upload
+// display selected file in input text box and check acceptability of filetype
 
 $("#input")[0].onchange = function() {
 
@@ -33,7 +33,7 @@ window.onclick = function(event) {
   }
 };
 
-// verify that file has useable data on clicking Submit button
+// verify that the file has useable data when Submit button is clicked
 
 $("#verify")[0].onclick = function() {
 
@@ -49,6 +49,21 @@ $("#verify")[0].onclick = function() {
 
 }
 
+// create plan when Create Plan button is clicked
+
+$("#plan")[0].onclick = function() {
+
+  if (window.File && window.FileReader && window.FileList && window.Blob) {
+  // Great success! All the File APIs are supported.
+} else {
+  alert('The File APIs are not fully supported in this browser.');
+}
+
+  var file = $("#input")[0].files[0];
+
+  createPlan(file);
+
+};
 
 // check filetype and display error message if not an accepted type
 
@@ -60,8 +75,43 @@ function checkFile(file) {
   }
 };
 
+// based on file type create geoJSON and verify that file is useable
 
-// read file after submitting, one for KML and one for SHP and ZIP due to different type required per the separate libraries
+function channelFile(file) {
+  let fileName = file.name;
+  let extension = fileName.substr((fileName.lastIndexOf('.') +1));
+  if (/(shp)$/ig.test(extension)) {
+    readFile(file).then(shpToGeo).then(checkShpData).then(displayCreatePlan);
+  }
+
+  if(/(kml)$/ig.test(extension)) {
+    readKMLFile(file).then(fromKML).then(getKMLGeo).then(checkData).then(displayCreatePlan);
+  }
+
+  if (/(zip)$/ig.test(extension)) {
+    readFile(file).then(zipToGeo).then(checkData).then(displayCreatePlan);
+  }
+};
+
+// create drone flight plan
+
+function createPlan(file) {
+  let fileName = file.name;
+  let extension = fileName.substr((fileName.lastIndexOf('.') +1));
+  if (/(shp)$/ig.test(extension)) {
+    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(console.log);
+  }
+
+  if(/(kml)$/ig.test(extension)) {
+    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(console.log);
+  }
+
+  if (/(zip)$/ig.test(extension)) {
+    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(console.log);
+  }
+};
+
+// read file after submitting, one for KML and one for SHP and ZIP due to different type required per the separate libraries; return Promise
 
 function readKMLFile(file) {
   return new Promise(function(succeed, fail) {
@@ -109,16 +159,19 @@ let geoObject = {};
 function shpToGeo(shape) {
   let geoArr = [];
   return shapefile.openShp(shape)
-  .then(source => source.read()
-    .then(function log(result) {
-      if (result.done) return;
-      geoArr.push(result.value);
-      source.read().then(log);
-      return geoArr;
-    }))
-    .then(geoObject)
+  .then(source => {
+      return new Promise((resolve, reject)=> {
+        source.read()
+        .then(function log(result) {
+          if (result.done) return resolve(geoArr);
+          geoArr.push(result.value);
+          source.read().then(log);
+        })
+      })
+    })
+    .then(createGeoObject)
     .catch(error => console.error(error.stack));
-};
+  };
 
 function createGeoObject(array) {
   geoObject.geojson = array;
@@ -127,7 +180,7 @@ function createGeoObject(array) {
 
 console.log('GEO OBJET', geoObject);
 
-// ZIP to geoJSON per library syntax  -- may not need
+// ZIP to geoJSON per library syntax - Calvin Metcalf's
 
 function zipToGeo(zip) {
   return shp(zip).then(function(geojson) {
@@ -139,6 +192,8 @@ function zipToGeo(zip) {
 // 2 functions, checkData for .zip & .kml since geojson is value of the features key while checkShpData since geojson is pushed to an array
 
 function checkData(data) {
+
+  console.log('OTHER DATA', data);
 
   if(data.features.length===0){
     modal.style.display = "block";
@@ -170,7 +225,9 @@ function checkData(data) {
 
 function checkShpData(data) {
 
-  let geojson = data[0];
+  console.log('SHP DATA', data);
+
+  let geojson = data.geojson[0];
 
   if(geojson.coordinates.length===0){
     modal.style.display = "block";
@@ -200,6 +257,7 @@ function checkShpData(data) {
 
 }
 
+// reveal Create Plan option if file has passed checks upon Submit
 
 function displayCreatePlan(boolean){
 
@@ -210,24 +268,130 @@ function displayCreatePlan(boolean){
   }
 }
 
+// create geoData object with bbox, coordinates, and cleaned up geojson given data returned from KML to GeoJson converter
 
-// based on file type create geoJSON and verify that file is useable
+function modifyKMLGeoJson(data) {
 
-function channelFile(file) {
-  let fileName = file.name;
-  let extension = fileName.substr((fileName.lastIndexOf('.') +1));
-  if (/(shp)$/ig.test(extension)) {
-    readFile(file).then(shpToGeo).then(checkShpData).then(displayCreatePlan);
+  geoData.coordinates = [];
+
+  if (data.features.length > 1 && data.features[0].geometry.coordinates[0].length <= 3) {
+    data.features.forEach((el) => el.geometry.coordinates.forEach((el)=> geoData.coordinates.push(el)));
+
+  } else if (data.features.length === 1 && data.features[0].geometry.coordinates[0][0].length <= 3) {
+    data.features[0].geometry.coordinates[0].forEach((el)=> geoData.coordinates.push(el) );
   }
 
-  if(/(kml)$/ig.test(extension)) {
-    readKMLFile(file).then(fromKML).then(getKMLGeo).then(checkData).then(displayCreatePlan);
+  else if (data.features.length === 1 && data.features[0].geometry.coordinates[0].length <= 3) {
+    data.features[0].geometry.coordinates.forEach((el) => geoData.coordinates.push(el))
   }
 
-  if (/(zip)$/ig.test(extension)) {
-    readFile(file).then(zipToGeo).then(checkData).then(displayCreatePlan);
-  }
+  geoData.coordinates.forEach((coordinate) => coordinate.splice(2));
+
+  let data1 = {polygon: geoData.coordinates};
+
+  geoData.geojson = GeoJSON.parse(data1, {'Polygon': 'polygon'});
+
+  let shape1 = {type: 'Polygon', coordinates: [geoData.coordinates]}
+
+  geoData.bbox = turf.bbox(shape1);
+
+  return geoData;
+
 };
+
+// create geoData object with bbox, coordinates, and cleaned up geojson given data returned from SHP to GeoJson converter
+
+function modifySHPGeoJson(data) {
+
+  if (data.geojson.length === 1 && data.geojson[0].coordinates.length === 1) {
+
+    createGeoData(data.geojson[0], geoData);
+
+  }
+
+  if (data.geojson.length === 1 && data.geojson[0].coordinates.length > 1) {
+
+    let tempGeoDataArr = [];
+
+    data.geojson[0].coordinates.forEach((coordsArr)=>tempGeoDataArr.push({polygon: [coordsArr]}));
+
+    let tempGeoJson = tempGeoDataArr.map((geoObj)=>GeoJSON.parse(geoObj, {'Polygon':'polygon'}));
+
+    let finalArr = [];
+
+    for (let i=0; i<tempGeoJson.length; i++) {
+      for (let j=0; j<tempGeoJson.length; j++) {
+        if (i!==j) {
+          if ( turf.booleanContains(tempGeoJson[i].geometry,tempGeoJson[j].geometry) ) {
+            finalArr.push(tempGeoJson[i].geometry)
+          }
+        }
+      }
+    }
+
+    createGeoData(finalArr[0], geoData);
+
+    }
+
+    if (data.geojson.length > 1) {
+
+      let tempGeoDataArr = [];
+
+      data.geojson.forEach((geojson)=>tempGeoDataArr.push({polygon: [geojson.coordinates]}));
+
+      let tempGeoJson = tempGeoDataArr.map((geoObj)=>GeoJSON.parse(geoObj, {'Polygon':'polygon'}));
+
+      let finalArr = [];
+
+      let max = tempGeoJson[0].geometry;
+
+      for (let i=1; i<tempGeoJson.length; i++) {
+        if ( turf.booleanContains(tempGeoJson[i].geometry, max) ) {
+          max = tempGeoJson[i].geometry;
+        }
+      }
+
+      finalArr.push(max);
+
+      createGeoData(finalArr[0], geoData);
+    }
+
+  return geoData;
+}
+
+// helper function to create bbx, coordinates, and geojson properties on geoData object
+
+function createGeoData(geoJsonObj, geoDataObj) {
+
+  let geojsonPrelim = {polygon:geoJsonObj.coordinates};
+
+  geoDataObj.geojson = GeoJSON.parse(geojsonPrelim, {'Polygon':'polygon'});
+
+  geoDataObj.bbox = turf.bbox(geoJsonObj);
+
+  geoDataObj.coordinates = geoJsonObj.coordinates;
+
+  return geoDataObj;
+
+}
+
+// create geoData object with bbox, coordinates, and cleaned up geojson given data returned from ZIP to GeoJson converter
+
+function modifyZIPGeoJson(data) {
+
+  geoData.bbox = data.features[0].geometry.bbox;
+
+  geoData.coordinates = data.features[0].geometry.coordinates;
+
+  let geojsonPrelim = {polygon:data.features[0].geometry.coordinates};
+
+  geoData.geojson = GeoJSON.parse(geojsonPrelim, {'Polygon':'polygon'});
+
+  return geoData;
+
+}
+
+
 
 // old getGeoJson
 

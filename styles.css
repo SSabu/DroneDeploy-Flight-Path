@@ -63,7 +63,7 @@ a {
 }
 
 img.logo {
-  height:45px;
+  height:48px;
   margin-right:.5rem;
 }
 
@@ -415,16 +415,8 @@ img {
   max-width:100%;
 }
 
-/*#input {
-  width: 150px;
-  overflow: hidden;
-}*/
-
-/*#uploadFile {
-  text-align: center;
-  border: none;
-  background-color: white;
-  color: black;
+/*#plan{
+  border: 2px solid #2196F3;
 }*/
 
 /* The Modal (background) */
