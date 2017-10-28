@@ -4,9 +4,28 @@ var modal = $("#myModal")[0];
 
 var span = $(".close")[0];
 
+//Expandable section
+var isExpanded = false;
+var upArrow = 'https://s3.amazonaws.com/drone-deploy-plugins/templates/login-example-imgs/arrow-up.svg';
+var downArrow = 'https://s3.amazonaws.com/drone-deploy-plugins/templates/login-example-imgs/arrow-down.svg';
+var expandArrow = document.querySelector('.expand-arrow');
+var expandBody = document.querySelector('.expand-section');
+var expandRow = document.querySelector('.expand-row');
+
+expandRow.addEventListener('click', function(){
+  isExpanded = !isExpanded
+  if (isExpanded){
+    expandArrow.src = upArrow;
+    expandBody.style.display = 'block';
+  } else{
+    expandArrow.src = downArrow;
+    expandBody.style.display = 'none';
+  }
+});
+
 // jQuery event handler functions
 
-// display selected file in input text box and check acceptability of filetype
+//   display selected file in input text box and check acceptability of filetype
 
 $("#input")[0].onchange = function() {
 
@@ -21,7 +40,7 @@ $("#input")[0].onchange = function() {
   checkFile(file.name);
 };
 
-// close modal if opened
+//   close modal if opened
 
 span.onclick = function() {
   modal.style.display = "none";
@@ -33,7 +52,7 @@ window.onclick = function(event) {
   }
 };
 
-// verify that the file has useable data when Submit button is clicked
+//   verify that the file has useable data when Submit button is clicked
 
 $("#verify")[0].onclick = function() {
 
@@ -49,7 +68,7 @@ $("#verify")[0].onclick = function() {
 
 }
 
-// create plan when Create Plan button is clicked
+//   create plan when Create Plan button is clicked
 
 $("#plan")[0].onclick = function() {
 
@@ -64,6 +83,8 @@ $("#plan")[0].onclick = function() {
   createPlan(file);
 
 };
+
+// helper functions
 
 // check filetype and display error message if not an accepted type
 
@@ -99,15 +120,15 @@ function createPlan(file) {
   let fileName = file.name;
   let extension = fileName.substr((fileName.lastIndexOf('.') +1));
   if (/(shp)$/ig.test(extension)) {
-    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(console.log);
+    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(findIntersections).then(console.log);
   }
 
   if(/(kml)$/ig.test(extension)) {
-    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(console.log);
+    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(findIntersections).then(console.log);
   }
 
   if (/(zip)$/ig.test(extension)) {
-    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(console.log);
+    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(findIntersections).then(console.log);
   }
 };
 
@@ -139,7 +160,7 @@ function readFile(file) {
   });
 }
 
-// KML to geoJSON per library syntax
+// KML to geoJSON per library syntax - Tom MacWright's (with error message if fail to read)
 
 function getKMLGeo(xml) {
   return toGeoJSON.kml(xml);
@@ -152,7 +173,7 @@ function fromKML(kml) {
   })
 }
 
-// SHP to geoJSON per library syntax
+// SHP to geoJSON per library syntax - Mike Bostock's
 
 let geoObject = {};
 
@@ -193,7 +214,7 @@ function zipToGeo(zip) {
 
 function checkData(data) {
 
-  console.log('OTHER DATA', data);
+  // console.log('OTHER DATA', data);
 
   if(data.features.length===0){
     modal.style.display = "block";
@@ -225,7 +246,7 @@ function checkData(data) {
 
 function checkShpData(data) {
 
-  console.log('SHP DATA', data);
+  // console.log('SHP DATA', data);
 
   let geojson = data.geojson[0];
 
@@ -268,7 +289,7 @@ function displayCreatePlan(boolean){
   }
 }
 
-// create geoData object with bbox, coordinates, and cleaned up geojson given data returned from KML to GeoJson converter
+// create geoData object with bbox, coordinates, and cleaned up geojson with data returned from KML to GeoJson converter
 
 function modifyKMLGeoJson(data) {
 
@@ -287,11 +308,13 @@ function modifyKMLGeoJson(data) {
 
   geoData.coordinates.forEach((coordinate) => coordinate.splice(2));
 
+  geoData.coordinates = [geoData.coordinates];
+
   let data1 = {polygon: geoData.coordinates};
 
   geoData.geojson = GeoJSON.parse(data1, {'Polygon': 'polygon'});
 
-  let shape1 = {type: 'Polygon', coordinates: [geoData.coordinates]}
+  let shape1 = {type: 'Polygon', coordinates: geoData.coordinates}
 
   geoData.bbox = turf.bbox(shape1);
 
@@ -299,7 +322,7 @@ function modifyKMLGeoJson(data) {
 
 };
 
-// create geoData object with bbox, coordinates, and cleaned up geojson given data returned from SHP to GeoJson converter
+// create geoData object with bbox, coordinates, and cleaned up geojson with data returned from SHP to GeoJson converter
 
 function modifySHPGeoJson(data) {
 
@@ -375,21 +398,25 @@ function createGeoData(geoJsonObj, geoDataObj) {
 
 }
 
-// create geoData object with bbox, coordinates, and cleaned up geojson given data returned from ZIP to GeoJson converter
+// create geoData object with bbox, coordinates, and cleaned up geojson with data returned from ZIP to GeoJson converter
 
 function modifyZIPGeoJson(data) {
 
   geoData.bbox = data.features[0].geometry.bbox;
 
-  geoData.coordinates = data.features[0].geometry.coordinates;
+  if (data.features[0].geometry.coordinates.length > 1) {
+    geoData.coordinates = [data.features[0].geometry.coordinates];
+  } else {
+    geoData.coordinates = data.features[0].geometry.coordinates;
+  }
 
-  let geojsonPrelim = {polygon:data.features[0].geometry.coordinates};
+  let geojsonPrelim = {polygon:geoData.coordinates};
 
   geoData.geojson = GeoJSON.parse(geojsonPrelim, {'Polygon':'polygon'});
 
   return geoData;
 
-}
+};
 
 
 
@@ -416,46 +443,85 @@ function getParallels(bbox) {
   let times = Math.floor(difference/0.0006036);
   let parallels = [];
   for (i=0; i<times; i++) {
-    let line = {};
+    let line = [];
     let parallel = 'line '+(1+i);
     let newLat =  Number( (bbox[1]+((1+i)*0.0006036)).toFixed(15) );
     let val = [ [bbox[0], newLat], [bbox[2], newLat] ];
-    line = { [parallel]: val }
+    line.push(val);
     parallels.push(line);
+  }
+
+  if (parallels.length === 0) {
+    parallels = [
+        [ [
+          [ bbox[0], bbox[1] ], [bbox[2], bbox[1] ]
+        ] ],
+        [
+         [
+           [bbox[0], bbox[3] ],[bbox[2], bbox[3] ]
+         ]
+       ]
+     ]
   }
 
   return parallels;
 }
 
-function removeDuplicates(array) {
-  let hash = {};
-  let out = [];
+// function removeDuplicates(array) {
+//   let hash = {};
+//   let out = [];
+//
+//   for (let i=0; i<array.length; i++) {
+//     let key = array[i].join('|').toString();
+//     if (!hash[key]) {
+//       out.push(array[i]);
+//       hash[key]='found';
+//     }
+//   }
+//   return out;
+// }
 
-  for (let i=0; i<array.length; i++) {
-    let key = array[i].join('|').toString();
-    if (!hash[key]) {
-      out.push(array[i]);
-      hash[key]='found';
-    }
-  }
-  return out;
-}
+function findIntersections(geoData) {
 
-function findIntersections(bbox, type, coordinates) {
+  // console.log(geoData);
 
-  let boundary = {"type": data.type, "coordinates":data.coordinates};
-
-  let parallelLines = getParallels(data.bbox);
+  let parallelLines = getParallels(geoData.bbox);
 
   // create GeoJSON from coordinates of parallel lines with geojson utils
 
-  let parallelsGeo = parallelLines.map( (el)=>GeoJSON.parse(el, {'LineString': Object.keys(el)[0]} ));
+  // console.log(parallelLines);
 
-  let intersections = parallelsGeo.map( (el) => gju.lineStringsIntersect(el.geometry, boundary));
+  let parallelsGeo = parallelLines.map( (el) => turf.lineString(el[0]));
 
-  data.intersections = intersections;
+  // console.log(parallelsGeo);
 
-  return data;
+  let intersectArray = [];
+
+  parallelsGeo.forEach((el) => intersectArray.push( turf.lineIntersect(el.geometry, geoData.geojson) ) );
+
+  // console.log('GEO',parallelsGeo);
+
+  // let int = turf.lineIntersect(parallelsGeo[0],geoData.geojson);
+
+  let intersections = [];
+
+  let arr3 = [];
+
+  intersectArray.forEach( (intersectGeo) => intersectGeo.features.forEach( (intGeo) => arr3.push(intGeo.geometry.coordinates) ) );
+
+  for (let i=0; i<parallelLines.length; i++) {
+    let arr2 = []
+    for (let j=0; j<arr3.length; j++){
+      if (parallelLines[i][0][0][1] === arr3[j][1]){
+        arr2.push(arr3[j]);
+      }
+    }
+    intersections.push(arr2);
+  }
+
+  geoData.intersections = intersections;
+
+  return geoData;
 }
 
 // if there are more than 2 intersections get the outermost intersections that bound the polygon
@@ -565,7 +631,7 @@ function intersectionsPathRight(intersections) {
   return flattenedArray;
 }
 
-//create drone path
+// create drone path
 
 function createPath(bbox, orderedIntersections, orderedCoordinates) {
 
@@ -607,7 +673,6 @@ function createPath(bbox, orderedIntersections, orderedCoordinates) {
 
   return data;
 }
-
 
 // shp(shapefile).then(getGeoJson)
 //   .then(findIntersections)
