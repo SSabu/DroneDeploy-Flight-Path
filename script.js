@@ -4,13 +4,14 @@ var modal = $("#myModal")[0];
 
 var span = $(".close")[0];
 
-//Expandable section
+//Expandable section taken from example
+
 var isExpanded = false;
 var upArrow = 'https://s3.amazonaws.com/drone-deploy-plugins/templates/login-example-imgs/arrow-up.svg';
 var downArrow = 'https://s3.amazonaws.com/drone-deploy-plugins/templates/login-example-imgs/arrow-down.svg';
-var expandArrow = document.querySelector('.expand-arrow');
-var expandBody = document.querySelector('.expand-section');
-var expandRow = document.querySelector('.expand-row');
+var expandArrow = $('.expand-arrow')[0];
+var expandBody = $('.expand-section')[0];
+var expandRow = $('.expand-row')[0];
 
 expandRow.addEventListener('click', function(){
   isExpanded = !isExpanded
@@ -44,7 +45,7 @@ $("#input")[0].onchange = function() {
 
 span.onclick = function() {
   modal.style.display = "none";
-}
+};
 
 window.onclick = function(event) {
   if (event.target === modal) {
@@ -66,7 +67,7 @@ $("#verify")[0].onclick = function() {
 
   channelFile(file)
 
-}
+};
 
 //   create plan when Create Plan button is clicked
 
@@ -84,7 +85,7 @@ $("#plan")[0].onclick = function() {
 
 };
 
-// helper functions
+// helper functions:
 
 // check filetype and display error message if not an accepted type
 
@@ -120,15 +121,15 @@ function createPlan(file) {
   let fileName = file.name;
   let extension = fileName.substr((fileName.lastIndexOf('.') +1));
   if (/(shp)$/ig.test(extension)) {
-    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(findIntersections).then(console.log);
+    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(findIntersections).then(getOuterBounds).then(createPath).then(console.log);
   }
 
   if(/(kml)$/ig.test(extension)) {
-    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(findIntersections).then(console.log);
+    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(findIntersections).then(getOuterBounds).then(createPath).then(console.log);
   }
 
   if (/(zip)$/ig.test(extension)) {
-    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(findIntersections).then(console.log);
+    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(createPath).then(findIntersections).then(getOuterBounds).then(console.log);
   }
 };
 
@@ -145,7 +146,7 @@ function readKMLFile(file) {
     });
     reader.readAsDataURL(file);
   })
-}
+};
 
 function readFile(file) {
   return new Promise(function(succeed, fail) {
@@ -158,20 +159,20 @@ function readFile(file) {
     });
     reader.readAsArrayBuffer(file);
   });
-}
+};
 
 // KML to geoJSON per library syntax - Tom MacWright's (with error message if fail to read)
 
 function getKMLGeo(xml) {
   return toGeoJSON.kml(xml);
-}
+};
 
 function fromKML(kml) {
   return $.ajax(kml).done(getKMLGeo).fail(function(){
     modal.style.display = "block";
     $(".modal-paragraph")[0].innerHTML = "Unable to read file. Please submit a different file.";
   })
-}
+};
 
 // SHP to geoJSON per library syntax - Mike Bostock's
 
@@ -207,14 +208,12 @@ function zipToGeo(zip) {
   return shp(zip).then(function(geojson) {
     return geojson;
   })
-}
+};
 
 // check data
 // 2 functions, checkData for .zip & .kml since geojson is value of the features key while checkShpData since geojson is pushed to an array
 
 function checkData(data) {
-
-  // console.log('OTHER DATA', data);
 
   if(data.features.length===0){
     modal.style.display = "block";
@@ -240,13 +239,9 @@ function checkData(data) {
   }
 
   return true;
-
-
-}
+};
 
 function checkShpData(data) {
-
-  // console.log('SHP DATA', data);
 
   let geojson = data.geojson[0];
 
@@ -275,8 +270,7 @@ function checkShpData(data) {
   }
 
   return true;
-
-}
+};
 
 // reveal Create Plan option if file has passed checks upon Submit
 
@@ -287,7 +281,7 @@ function displayCreatePlan(boolean){
   if(boolean){
     checkGo.style.display = "block";
   }
-}
+};
 
 // create geoData object with bbox, coordinates, and cleaned up geojson with data returned from KML to GeoJson converter
 
@@ -319,7 +313,6 @@ function modifyKMLGeoJson(data) {
   geoData.bbox = turf.bbox(shape1);
 
   return geoData;
-
 };
 
 // create geoData object with bbox, coordinates, and cleaned up geojson with data returned from SHP to GeoJson converter
@@ -380,7 +373,7 @@ function modifySHPGeoJson(data) {
     }
 
   return geoData;
-}
+};
 
 // helper function to create bbx, coordinates, and geojson properties on geoData object
 
@@ -395,8 +388,7 @@ function createGeoData(geoJsonObj, geoDataObj) {
   geoDataObj.coordinates = geoJsonObj.coordinates;
 
   return geoDataObj;
-
-}
+};
 
 // create geoData object with bbox, coordinates, and cleaned up geojson with data returned from ZIP to GeoJson converter
 
@@ -415,25 +407,7 @@ function modifyZIPGeoJson(data) {
   geoData.geojson = GeoJSON.parse(geojsonPrelim, {'Polygon':'polygon'});
 
   return geoData;
-
 };
-
-
-
-// old getGeoJson
-
-// function getGeoJson(geojson) {
-//   data.bbox = geojson.features[0].geometry.bbox,
-//   data.coordinates = geojson.features[0].geometry.coordinates,
-//   data.type = geojson.features[0].geometry.type,
-//   data.orderedCoordinates = geojson.features[0].geometry.coordinates;
-//
-// // remove duplicate coordinates and elevation point for array of coordinates
-//   data.orderedCoordinates = removeDuplicates(data.orderedCoordinates);
-//   data.orderedCoordinates.forEach((coordinate) => coordinate.splice(2));
-//
-//   return data;
-// }
 
 // get coordinates for parallel lines approximately 220 feet from each other
 
@@ -453,55 +427,32 @@ function getParallels(bbox) {
 
   if (parallels.length === 0) {
     parallels = [
-        [ [
-          [ bbox[0], bbox[1] ], [bbox[2], bbox[1] ]
-        ] ],
-        [
-         [
-           [bbox[0], bbox[3] ],[bbox[2], bbox[3] ]
-         ]
-       ]
-     ]
+                  [
+                    [
+                      [ bbox[0], bbox[1] ], [bbox[2], bbox[1] ]
+                    ]
+                  ],
+                  [
+                    [
+                      [bbox[0], bbox[3] ],[bbox[2], bbox[3] ]
+                     ]
+                  ]
+                ];
   }
 
   return parallels;
-}
+};
 
-// function removeDuplicates(array) {
-//   let hash = {};
-//   let out = [];
-//
-//   for (let i=0; i<array.length; i++) {
-//     let key = array[i].join('|').toString();
-//     if (!hash[key]) {
-//       out.push(array[i]);
-//       hash[key]='found';
-//     }
-//   }
-//   return out;
-// }
 
 function findIntersections(geoData) {
 
-  // console.log(geoData);
-
   let parallelLines = getParallels(geoData.bbox);
 
-  // create GeoJSON from coordinates of parallel lines with geojson utils
-
-  // console.log(parallelLines);
-
   let parallelsGeo = parallelLines.map( (el) => turf.lineString(el[0]));
-
-  // console.log(parallelsGeo);
 
   let intersectArray = [];
 
   parallelsGeo.forEach((el) => intersectArray.push( turf.lineIntersect(el.geometry, geoData.geojson) ) );
-
-  // console.log('GEO',parallelsGeo);
-
-  // let int = turf.lineIntersect(parallelsGeo[0],geoData.geojson);
 
   let intersections = [];
 
@@ -522,163 +473,181 @@ function findIntersections(geoData) {
   geoData.intersections = intersections;
 
   return geoData;
-}
+};
 
-// if there are more than 2 intersections get the outermost intersections that bound the polygon
+// if there are more than 2 intersections get the outermost intersections that bound the polygon and order intersections West to East
 
-// re-assign the geojson object so any intersection with more than two points only has two points, the outermost bounds
+function getOuterBounds(geoData) {
 
-function getOuterBounds(intersections) {
-
-  let index = [];
-  let boundedCoords = [];
+  let intersections = geoData.intersections;
 
   for (let i=0; i<intersections.length; i++) {
+    if (intersections[i].length === 2) {
+      intersections[i].sort((a,b) => a[0]-b[0]);
+    }
     if (intersections[i].length > 2) {
-      let temp = [];
-      for (let j=0; j<intersections[i].length; j++) {
-        temp.push(intersections[i][j].coordinates[1]);
-      }
-      temp.sort((a,b) => a-b)
-      let bound1 = temp[0];
-      let bound2 = temp[temp.length-1]
+      intersections[i].sort((a,b) => a[0]-b[0]);
 
-      index.push(i);
-      boundedCoords.push([bound1, bound2]);
+      let newIntersections = [intersections[i][0], intersections[i][intersections[i].length-1]];
+
+      intersections[i]=newIntersections;
     }
   }
 
-  for (let i=0; i<index.length; i++) {
-    for (let j=0; j<intersections.length; j++) {
-      if (index[i]===j) {
-        intersections[j] = [ {'type':"Point", 'coordinates':[intersections[j][0].coordinates[0],boundedCoords[i][0] ]},{'type':"Point", 'coordinates':[intersections[j][0].coordinates[0],boundedCoords[i][1] ]}  ]
+  return geoData;
+};
+
+// find coordinate in a set between two points
+
+// function nextPoint(point1, point2, arrayOfPoints) {
+//
+//   for (let i=0; i<arrayOfPoints.length; i++) {
+//
+//     if (arrayOfPoints[i][0]>point2[0] && arrayOfPoints[i][0]<point1[0] && arrayOfPoints[i][1]<point2[1] && arrayOfPoints[i][1]>point1[1]
+//     ) {
+//       return arrayOfPoints[i];
+//     }
+//   }
+// };
+
+function nextPoint(point1, point2, arrayOfPoints) {
+
+  let nextSet = [];
+
+  for (let i=0; i<arrayOfPoints.length; i++) {
+
+    if (point1[0]<point2[0]) {
+      if (arrayOfPoints[i][0]<point2[0] && arrayOfPoints[i][0]>point1[0] && arrayOfPoints[i][1]<point2[1] && arrayOfPoints[i][1]>point1[1]
+      ) {
+        nextSet.push(arrayOfPoints[i]);
+      }
+    }
+
+    else if (point1[0]>point2[0]) {
+      if (arrayOfPoints[i][0]>point2[0] && arrayOfPoints[i][0]<point1[0] && arrayOfPoints[i][1]<point2[1] && arrayOfPoints[i][1]>point1[1]
+      ) {
+        nextSet.push(arrayOfPoints[i]);
+      }
+    }
+  }
+
+  return nextSet;
+};
+
+//transform array based on which direction path travels first
+
+// function intersectionsPathLeft(intersections) {
+//
+//   let flattenedArray = [];
+//
+//   for (let i=0; i<intersections.length; i++) {
+//     if (i%2!==0) {
+//       intersections[i].sort((a,b)=>b[0]-a[0]);
+//     }
+//     if (i%2===0) {
+//       intersections[i].sort((a,b) => a[0]-b[0])
+//     }
+//   }
+//   intersections.forEach((el) => el.forEach((el) => flattenedArray.push(el)));
+//
+//   return flattenedArray;
+// }
+//
+// function intersectionsPathRight(intersections) {
+//
+//   let flattenedArray = [];
+//
+//   for (let i=0; i<intersections.length; i++) {
+//     if (i%2!==0) {
+//
+//       intersections[i].sort((a,b)=>a[0]-b[0]);
+//     }
+//     if (i%2==0) {
+//       intersections[i].sort((a,b) => b[0]-a[0]);
+//     }
+//   }
+//   intersections.forEach((el) => el.forEach((el) => flattenedArray.push(el)));
+//
+//   return flattenedArray;
+// }
+
+function alternateIntersections(intersections) {
+
+  for (let i=0; i<intersections.length; i++) {
+    if (intersections[i].length < 2) {
+      return intersections[i];
+    } else {
+      if (i%2!==0) {
+        intersections[i].sort((a,b)=>b[0]-a[0]);
+      }
+      if (i%2==0) {
+        intersections[i].sort((a,b) => a[0]-b[0]);
       }
     }
   }
 
   return intersections;
-}
-
-// order the intersections so they can be read in a system order from west to east
-
-function orderIntersections(intersections) {
-
-  let boundedIntersections = getOuterBounds(data.intersections);
-
-  let orderedIntersections = [];
-
-  data.intersections.forEach((el) => orderedIntersections.push([el[0].coordinates, el[1].coordinates]));
-
-  orderedIntersections.forEach((el) => el.sort((a,b)=>a[1]-b[1]));
-
-// structure intersections similar to coordinate array with [long, lat]
-
-  orderedIntersections.forEach((el) => el.forEach((el) => el.reverse()));
-
-  data.orderedIntersections = orderedIntersections;
-
-  return data;
-}
-
-// find coordinate in a set between two points
-
-function nextPoint(point1, point2, arrayOfPoints) {
-
-  for (let i=0; i<data.orderedCoordinates.length; i++) {
-
-    if (arrayOfPoints[i][0]>point2[0] && arrayOfPoints[i][0]<point1[0] && arrayOfPoints[i][1]<point2[1] && arrayOfPoints[i][1]>point1[1]
-    ) {
-      return arrayOfPoints[i];
-    }
-  }
-}
-
-//transform array based on which direction path travels first
-
-function intersectionsPathLeft(intersections) {
-
-  let flattenedArray = [];
-
-  for (let i=0; i<intersections.length; i++) {
-    if (i%2!==0) {
-      intersections[i].sort((a,b)=>b[0]-a[0]);
-    }
-    if (i%2===0) {
-      intersections[i].sort((a,b) => a[0]-b[0])
-    }
-  }
-  intersections.forEach((el) => el.forEach((el) => flattenedArray.push(el)));
-
-  return flattenedArray;
-}
-
-
-function intersectionsPathRight(intersections) {
-
-  let flattenedArray = [];
-
-  for (let i=0; i<intersections.length; i++) {
-    if (i%2!==0) {
-
-      intersections[i].sort((a,b)=>a[0]-b[0]);
-    }
-    if (i%2==0) {
-      intersections[i].sort((a,b) => b[0]-a[0]);
-    }
-  }
-  intersections.forEach((el) => el.forEach((el) => flattenedArray.push(el)));
-
-  return flattenedArray;
-}
+};
 
 // create drone path
 
-function createPath(bbox, orderedIntersections, orderedCoordinates) {
+function createPath(geoData) {
+
+  geoData.intersections = alternateIntersections(geoData.intersections);
+
+  console.log('DATA', geoData);
+
+  // console.log('NEW INT', newInt);
 
   let newPath = [];
-  let newIntersections = [];
+  // let newIntersections = [];
 
-  data.orderedCoordinates.forEach(function(el) {
-    if (el[1]===data.bbox[1]) {
-      newPath.push(el);
+  // geoData.coordinates.forEach(function(el) {
+  //   if (el[1]===data.bbox[1]) {
+  //     newPath.push(el);
+  //   }
+  // });
+
+  newPath.push(geoData.intersections[0][0],geoData.intersections[0][1]);
+
+  // if (nextPoint(newPath[newPath.length-1], geoData.intersections[1][0], geoData.coordinates) ) {
+  //   newPath.push(nextPoint(newPath[newPath.length-1], geoData.intersections[1][0], geoData.coordinates));
+  //   // newIntersections = intersectionsPathLeft(data.orderedIntersections);
+  //   newPath.push(geoData.intersections[1][0],geoData.intersections[1][1]);
+  // }
+  //
+  // if(nextPoint(newPath[newPath.length-1], geoData.intersections[2][0], geoData.coordinates)) {
+  //   newPath.push(nextPoint(newPath[newPath.length-1], geoData.intersections[1][0], geoData.coordinates));
+  //   // newIntersections = intersectionsPathLeft(data.orderedIntersections);
+  //   newPath.push(geoData.intersections[1][0],geoData.intersections[1][1]);
+  // }
+
+
+  // else if (nextPoint(newPath[newPath.length-1], data.orderedIntersections[0][1], data.orderedCoordinates)) {
+  //   newPath.push(nextPoint(newPath[newPath.length-1], data.orderedIntersections[0][1], data.orderedCoordinates));
+  //   newIntersections = intersectPathRight(data.orderedIntersections);
+  //   newPath.push(newIntersections[0], newIntersections[1])
+  // }
+  //
+  // else {
+  //   newIntersections = intersectionsPathLeft(data.orderedIntersections);
+  //   newPath.push(newIntersections[0], newIntersections[1]);
+  // }
+
+  for (let i=1; i<geoData.intersections.length; i++) {
+
+    let newPoints = nextPoint(newPath[newPath.length-1], geoData.intersections[i][0], geoData.coordinates[0]);
+
+    if(newPoints.length !==0) {
+      newPoints.forEach((newPoint) => newPath.push(newPoint));
     }
-  });
 
-  if (nextPoint(newPath[newPath.length-1], data.orderedIntersections[0][0], data.orderedCoordinates) ) {
-    newPath.push(nextPoint(newPath[newPath.length-1], data.orderedIntersections[0][0], data.orderedCoordinates));
-    newIntersections = intersectionsPathLeft(data.orderedIntersections);
-    newPath.push(newIntersections[0], newIntersections[1]);
-  }
-
-  else if (nextPoint(newPath[newPath.length-1], data.orderedIntersections[0][1], data.orderedCoordinates)) {
-    newPath.push(nextPoint(newPath[newPath.length-1], data.orderedIntersections[0][1], data.orderedCoordinates));
-    newIntersections = intersectPathRight(data.orderedIntersections);
-    newPath.push(newIntersections[0], newIntersections[1])
-  }
-
-  else {
-    newIntersections = intersectionsPathLeft(data.orderedIntersections);
-    newPath.push(newIntersections[0], newIntersections[1]);
-  }
-
-  for (let i=2; i<newIntersections.length; i+=2) {
-  if(nextPoint(newPath[newPath.length-1], newIntersections[i], data.orderedCoordinates) ) {
-    newPath.push(nextPoint(newPath[newPath.length-1], newIntersections[i], data.orderedCoordinates));
-  }
-
-  newPath.push(newIntersections[i], newIntersections[i+1]);
+  newPath.push(geoData.intersections[i][0], geoData.intersections[i][1]);
 }
 
-  data.newPath = newPath;
+  geoData.newPath = newPath;
 
-  return data;
-}
+  console.log('NEW PATH', newPath);
 
-// shp(shapefile).then(getGeoJson)
-//   .then(findIntersections)
-//   .then(orderIntersections)
-//   .then(createPath)
-//   .then(console.log)
-//   .catch(err=>console.log(err));
-//
-//   console.log('THIS IS DATA',data);
+  return geoData;
+};
