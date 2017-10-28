@@ -497,18 +497,7 @@ function getOuterBounds(geoData) {
   return geoData;
 };
 
-// find coordinate in a set between two points
-
-// function nextPoint(point1, point2, arrayOfPoints) {
-//
-//   for (let i=0; i<arrayOfPoints.length; i++) {
-//
-//     if (arrayOfPoints[i][0]>point2[0] && arrayOfPoints[i][0]<point1[0] && arrayOfPoints[i][1]<point2[1] && arrayOfPoints[i][1]>point1[1]
-//     ) {
-//       return arrayOfPoints[i];
-//     }
-//   }
-// };
+// in an array of coordinates, find those that fall in between two points
 
 function nextPoint(point1, point2, arrayOfPoints) {
 
@@ -534,43 +523,6 @@ function nextPoint(point1, point2, arrayOfPoints) {
   return nextSet;
 };
 
-//transform array based on which direction path travels first
-
-// function intersectionsPathLeft(intersections) {
-//
-//   let flattenedArray = [];
-//
-//   for (let i=0; i<intersections.length; i++) {
-//     if (i%2!==0) {
-//       intersections[i].sort((a,b)=>b[0]-a[0]);
-//     }
-//     if (i%2===0) {
-//       intersections[i].sort((a,b) => a[0]-b[0])
-//     }
-//   }
-//   intersections.forEach((el) => el.forEach((el) => flattenedArray.push(el)));
-//
-//   return flattenedArray;
-// }
-//
-// function intersectionsPathRight(intersections) {
-//
-//   let flattenedArray = [];
-//
-//   for (let i=0; i<intersections.length; i++) {
-//     if (i%2!==0) {
-//
-//       intersections[i].sort((a,b)=>a[0]-b[0]);
-//     }
-//     if (i%2==0) {
-//       intersections[i].sort((a,b) => b[0]-a[0]);
-//     }
-//   }
-//   intersections.forEach((el) => el.forEach((el) => flattenedArray.push(el)));
-//
-//   return flattenedArray;
-// }
-
 function alternateIntersections(intersections) {
 
   for (let i=0; i<intersections.length; i++) {
@@ -595,59 +547,22 @@ function createPath(geoData) {
 
   geoData.intersections = alternateIntersections(geoData.intersections);
 
-  console.log('DATA', geoData);
-
-  // console.log('NEW INT', newInt);
-
   let newPath = [];
-  // let newIntersections = [];
-
-  // geoData.coordinates.forEach(function(el) {
-  //   if (el[1]===data.bbox[1]) {
-  //     newPath.push(el);
-  //   }
-  // });
 
   newPath.push(geoData.intersections[0][0],geoData.intersections[0][1]);
-
-  // if (nextPoint(newPath[newPath.length-1], geoData.intersections[1][0], geoData.coordinates) ) {
-  //   newPath.push(nextPoint(newPath[newPath.length-1], geoData.intersections[1][0], geoData.coordinates));
-  //   // newIntersections = intersectionsPathLeft(data.orderedIntersections);
-  //   newPath.push(geoData.intersections[1][0],geoData.intersections[1][1]);
-  // }
-  //
-  // if(nextPoint(newPath[newPath.length-1], geoData.intersections[2][0], geoData.coordinates)) {
-  //   newPath.push(nextPoint(newPath[newPath.length-1], geoData.intersections[1][0], geoData.coordinates));
-  //   // newIntersections = intersectionsPathLeft(data.orderedIntersections);
-  //   newPath.push(geoData.intersections[1][0],geoData.intersections[1][1]);
-  // }
-
-
-  // else if (nextPoint(newPath[newPath.length-1], data.orderedIntersections[0][1], data.orderedCoordinates)) {
-  //   newPath.push(nextPoint(newPath[newPath.length-1], data.orderedIntersections[0][1], data.orderedCoordinates));
-  //   newIntersections = intersectPathRight(data.orderedIntersections);
-  //   newPath.push(newIntersections[0], newIntersections[1])
-  // }
-  //
-  // else {
-  //   newIntersections = intersectionsPathLeft(data.orderedIntersections);
-  //   newPath.push(newIntersections[0], newIntersections[1]);
-  // }
 
   for (let i=1; i<geoData.intersections.length; i++) {
 
     let newPoints = nextPoint(newPath[newPath.length-1], geoData.intersections[i][0], geoData.coordinates[0]);
 
-    if(newPoints.length !==0) {
+    if (newPoints.length !==0) {
       newPoints.forEach((newPoint) => newPath.push(newPoint));
     }
 
-  newPath.push(geoData.intersections[i][0], geoData.intersections[i][1]);
-}
+    newPath.push(geoData.intersections[i][0], geoData.intersections[i][1]);
+  }
 
   geoData.newPath = newPath;
-
-  console.log('NEW PATH', newPath);
 
   return geoData;
 };
