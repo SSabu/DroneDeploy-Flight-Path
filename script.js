@@ -452,6 +452,7 @@ function droneDeployApi(geoData) {
   dd.then(function(droneDeploy) {
     droneDeploy.Plans.create(options).then(function(plan) {
       droneDeploy.Map.panTo(geoData.centroid, {zoom:14});
+      droneDeploy.Track.successCondition();
     });
   });
 };
