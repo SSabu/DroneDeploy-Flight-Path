@@ -121,15 +121,15 @@ function createPlan(file) {
   let fileName = file.name;
   let extension = fileName.substr((fileName.lastIndexOf('.') +1));
   if (/(shp)$/ig.test(extension)) {
-    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(findIntersections).then(getOuterBounds).then(createPath).then(console.log);
+    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(transformCoordinates).then(droneDeployApi).then(console.log);
   }
 
   if(/(kml)$/ig.test(extension)) {
-    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(findIntersections).then(getOuterBounds).then(createPath).then(console.log);
+    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(transformCoordinates).then(droneDeployApi).then(console.log);
   }
 
   if (/(zip)$/ig.test(extension)) {
-    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(createPath).then(findIntersections).then(getOuterBounds).then(console.log);
+    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(transformCoordinates).then(droneDeployApi).then(console.log);
   }
 };
 
@@ -182,7 +182,7 @@ function shpToGeo(shape) {
   let geoArr = [];
   return shapefile.openShp(shape)
   .then(source => {
-      return new Promise((resolve, reject)=> {
+      return new Promise(function(resolve, reject) {
         source.read()
         .then(function log(result) {
           if (result.done) return resolve(geoArr);
@@ -409,160 +409,33 @@ function modifyZIPGeoJson(data) {
   return geoData;
 };
 
-// get coordinates for parallel lines approximately 220 feet from each other
+function transformCoordinates(geoData) {
 
-function getParallels(bbox) {
+  let coordinatesTransformed = [];
 
-  let difference = bbox[3]-bbox[1];
-  let times = Math.floor(difference/0.0006036);
-  let parallels = [];
-  for (i=0; i<times; i++) {
-    let line = [];
-    let parallel = 'line '+(1+i);
-    let newLat =  Number( (bbox[1]+((1+i)*0.0006036)).toFixed(15) );
-    let val = [ [bbox[0], newLat], [bbox[2], newLat] ];
-    line.push(val);
-    parallels.push(line);
+  for (let j=0; j<geoData.coordinates[0].length; j++) {
+    let latlng = {};
+    latlng.lat = geoData.coordinates[0][j][1];
+    latlng.lng = geoData.coordinates[0][j][0];
+    coordinatesTransformed.push(latlng);
   }
 
-  if (parallels.length === 0) {
-    parallels = [
-                  [
-                    [
-                      [ bbox[0], bbox[1] ], [bbox[2], bbox[1] ]
-                    ]
-                  ],
-                  [
-                    [
-                      [bbox[0], bbox[3] ],[bbox[2], bbox[3] ]
-                     ]
-                  ]
-                ];
-  }
-
-  return parallels;
-};
-
-
-function findIntersections(geoData) {
-
-  let parallelLines = getParallels(geoData.bbox);
-
-  let parallelsGeo = parallelLines.map( (el) => turf.lineString(el[0]));
-
-  let intersectArray = [];
-
-  parallelsGeo.forEach((el) => intersectArray.push( turf.lineIntersect(el.geometry, geoData.geojson) ) );
-
-  let intersections = [];
-
-  let arr3 = [];
-
-  intersectArray.forEach( (intersectGeo) => intersectGeo.features.forEach( (intGeo) => arr3.push(intGeo.geometry.coordinates) ) );
-
-  for (let i=0; i<parallelLines.length; i++) {
-    let arr2 = []
-    for (let j=0; j<arr3.length; j++){
-      if (parallelLines[i][0][0][1] === arr3[j][1]){
-        arr2.push(arr3[j]);
-      }
-    }
-    intersections.push(arr2);
-  }
-
-  geoData.intersections = intersections;
+  geoData.coordinatesTransformed = coordinatesTransformed;
 
   return geoData;
 };
 
-// if there are more than 2 intersections get the outermost intersections that bound the polygon and order intersections West to East
+function droneDeployApi(geoData) {
 
-function getOuterBounds(geoData) {
+  const dd = new DroneDeploy({version:1});
 
-  let intersections = geoData.intersections;
+  let options = {name: 'Flight Path', geometry: geoData.coordinatesTransformed};
 
-  for (let i=0; i<intersections.length; i++) {
-    if (intersections[i].length === 2) {
-      intersections[i].sort((a,b) => a[0]-b[0]);
-    }
-    if (intersections[i].length > 2) {
-      intersections[i].sort((a,b) => a[0]-b[0]);
-
-      let newIntersections = [intersections[i][0], intersections[i][intersections[i].length-1]];
-
-      intersections[i]=newIntersections;
-    }
-  }
-
-  return geoData;
-};
-
-// in an array of coordinates, find those that fall in between two points
-
-function nextPoint(point1, point2, arrayOfPoints) {
-
-  let nextSet = [];
-
-  for (let i=0; i<arrayOfPoints.length; i++) {
-
-    if (point1[0]<point2[0]) {
-      if (arrayOfPoints[i][0]<point2[0] && arrayOfPoints[i][0]>point1[0] && arrayOfPoints[i][1]<point2[1] && arrayOfPoints[i][1]>point1[1]
-      ) {
-        nextSet.push(arrayOfPoints[i]);
-      }
-    }
-
-    else if (point1[0]>point2[0]) {
-      if (arrayOfPoints[i][0]>point2[0] && arrayOfPoints[i][0]<point1[0] && arrayOfPoints[i][1]<point2[1] && arrayOfPoints[i][1]>point1[1]
-      ) {
-        nextSet.push(arrayOfPoints[i]);
-      }
-    }
-  }
-
-  return nextSet;
-};
-
-function alternateIntersections(intersections) {
-
-  for (let i=0; i<intersections.length; i++) {
-    if (intersections[i].length < 2) {
-      return intersections[i];
-    } else {
-      if (i%2!==0) {
-        intersections[i].sort((a,b)=>b[0]-a[0]);
-      }
-      if (i%2==0) {
-        intersections[i].sort((a,b) => a[0]-b[0]);
-      }
-    }
-  }
-
-  return intersections;
-};
-
-// create drone path
-
-function createPath(geoData) {
-
-  geoData.intersections = alternateIntersections(geoData.intersections);
-
-  let newPath = [];
-
-  newPath.push(geoData.intersections[0][0],geoData.intersections[0][1]);
-
-  for (let i=1; i<geoData.intersections.length; i++) {
-
-    let newPoints = nextPoint(newPath[newPath.length-1], geoData.intersections[i][0], geoData.coordinates[0]);
-
-    if (newPoints.length !==0) {
-      newPoints.forEach((newPoint) => newPath.push(newPoint));
-    }
-
-    newPath.push(geoData.intersections[i][0], geoData.intersections[i][1]);
-  }
-
-  geoData.newPath = newPath;
+  dd.then(function(droneDeploy) {
+    droneDeploy.Plans.create(options).then(function(plan) {
+      console.log('Plan', plan);
+    });
+  });
 
   return geoData;
 };
