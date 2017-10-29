@@ -4,7 +4,7 @@ var modal = $("#myModal")[0];
 
 var span = $(".close")[0];
 
-//Expandable section taken from example
+//  Expandable section taken from example
 
 var isExpanded = false;
 var upArrow = 'https://s3.amazonaws.com/drone-deploy-plugins/templates/login-example-imgs/arrow-up.svg';
@@ -57,12 +57,6 @@ window.onclick = function(event) {
 
 $("#verify")[0].onclick = function() {
 
-  if (window.File && window.FileReader && window.FileList && window.Blob) {
-    // Great, all File APIs are supported
-  } else {
-    alert("The File APIs are not supported on this browser");
-  }
-
   var file = $("#input")[0].files[0];
 
   channelFile(file)
@@ -72,12 +66,6 @@ $("#verify")[0].onclick = function() {
 //   create plan when Create Plan button is clicked
 
 $("#plan")[0].onclick = function() {
-
-  if (window.File && window.FileReader && window.FileList && window.Blob) {
-  // Great success! All the File APIs are supported.
-} else {
-  alert('The File APIs are not fully supported in this browser.');
-}
 
   var file = $("#input")[0].files[0];
 
@@ -212,9 +200,8 @@ function zipToGeo(zip) {
   })
 };
 
-
-
-// check data
+// Check data:
+//
 // 2 functions, checkData for .zip & .kml since geojson is value of the features key while checkShpData since geojson is pushed to an array
 
 function checkData(data) {
@@ -384,7 +371,7 @@ function modifySHPGeoJson(data) {
   return geoData;
 };
 
-// helper function to create bbx, coordinates, and geojson properties on geoData object
+// helper function to create bbox, coordinates, and geojson properties on geoData object
 
 function createGeoData(geoJsonObj, geoDataObj) {
 
@@ -418,6 +405,8 @@ function modifyZIPGeoJson(data) {
   return geoData;
 };
 
+// transform array of coordinates into {lat: ,lng: } so it is readable by DroneDeploy API, add centroid in {lat: ,lng: } format so map can pan to vicinity of flight plan
+
 function transformCoordinates(geoData) {
 
   let centroid = turf.centroid(geoData.geojson);
@@ -442,6 +431,8 @@ function transformCoordinates(geoData) {
 
   return geoData;
 };
+
+// make call to Drone Deploy API, send geoData name of flight, geometry of shape, call Plans.create to generate flight path, zoom to vicinity of area of interest, and call Track.successCondition
 
 function droneDeployApi(geoData) {
 
