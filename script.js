@@ -85,6 +85,13 @@ $("#plan")[0].onclick = function() {
 
 };
 
+// Open modal with error message
+
+function modalOpen(message){
+  modal.style.display="block";
+  $(".modal-paragraph")[0].innerHTML = message;
+}
+
 // helper functions:
 
 // check filetype and display error message if not an accepted type
@@ -92,8 +99,7 @@ $("#plan")[0].onclick = function() {
 function checkFile(file) {
   var extension = file.substr((file.lastIndexOf('.')+1));
   if (!/(shp|zip|kml)$/ig.test(extension)) {
-    modal.style.display = "block";
-    $(".modal-paragraph")[0].innerHTML = "Invalid file type: "+extension+". Please use a .shp, .kml, or .zip file.";
+    modalOpen('Invalid file type: '+extension+'. Please use a .shp, .kml, or .zip file.');
   }
 };
 
@@ -119,17 +125,18 @@ function channelFile(file) {
 
 function createPlan(file) {
   let fileName = file.name;
+  geoData.name = fileName.substring(0, fileName.length-4);
   let extension = fileName.substr((fileName.lastIndexOf('.') +1));
   if (/(shp)$/ig.test(extension)) {
-    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(transformCoordinates).then(droneDeployApi).then(console.log);
+    readFile(file).then(shpToGeo).then(modifySHPGeoJson).then(transformCoordinates).then(droneDeployApi);
   }
 
   if(/(kml)$/ig.test(extension)) {
-    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(transformCoordinates).then(droneDeployApi).then(console.log);
+    readKMLFile(file).then(fromKML).then(getKMLGeo).then(modifyKMLGeoJson).then(transformCoordinates).then(droneDeployApi);
   }
 
   if (/(zip)$/ig.test(extension)) {
-    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(transformCoordinates).then(droneDeployApi).then(console.log);
+    readFile(file).then(zipToGeo).then(modifyZIPGeoJson).then(transformCoordinates).then(droneDeployApi);
   }
 };
 
@@ -168,10 +175,7 @@ function getKMLGeo(xml) {
 };
 
 function fromKML(kml) {
-  return $.ajax(kml).done(getKMLGeo).fail(function(){
-    modal.style.display = "block";
-    $(".modal-paragraph")[0].innerHTML = "Unable to read file. Please submit a different file.";
-  })
+  return $.ajax(kml).done(getKMLGeo).fail(() => {modalOpen('Unable to read file. Please submit a different file.')});
 };
 
 // SHP to geoJSON per library syntax - Mike Bostock's
@@ -200,8 +204,6 @@ function createGeoObject(array) {
   return geoObject;
 };
 
-console.log('GEO OBJET', geoObject);
-
 // ZIP to geoJSON per library syntax - Calvin Metcalf's
 
 function zipToGeo(zip) {
@@ -210,14 +212,17 @@ function zipToGeo(zip) {
   })
 };
 
+
+
 // check data
 // 2 functions, checkData for .zip & .kml since geojson is value of the features key while checkShpData since geojson is pushed to an array
 
 function checkData(data) {
 
   if(data.features.length===0){
-    modal.style.display = "block";
-    $(".modal-paragraph")[0].innerHTML = 'GeoJSON has no coordinates. Please submit a file with at least one feature.';
+
+    modalOpen('GeoJSON has no coordinates. Please submit a file with at least one feature.');
+
     return false;
   }
 
@@ -227,14 +232,16 @@ function checkData(data) {
 
     if ( (geojson.geometry.coordinates[0][0]>180 || geojson.geometry.coordinates[0][0]<-180) ||
     (geojson.geometry.coordinates[0][1]>90 || geojson.geometry.coordinates[0][1]<-90) ) {
-      modal.style.display = "block";
-        $(".modal-paragraph")[0].innerHTML = 'Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.';
+
+      modalOpen('Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.');
+
       return false;
     }
   } else if ( (geojson.geometry.coordinates[0][0][0]>180 || geojson.geometry.coordinates[0][0][0]<-180) ||
   (geojson.geometry.coordinates[0][0][1]>90 || geojson.geometry.coordinates[0][0][1]<-90) ) {
-    modal.style.display = "block";
-      $(".modal-paragraph")[0].innerHTML = 'Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.';
+
+    modalOpen('Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.');
+
     return false;
   }
 
@@ -246,8 +253,9 @@ function checkShpData(data) {
   let geojson = data.geojson[0];
 
   if(geojson.coordinates.length===0){
-    modal.style.display = "block";
-      $(".modal-paragraph")[0].innerHTML = 'GeoJSON has no coordinates. Please submit a file with at least one feature.';
+
+    modalOpen('GeoJSON has no coordinates. Please submit a file with at least one feature.');
+
     return false;
   }
 
@@ -255,16 +263,16 @@ function checkShpData(data) {
 
     if ( (geojson.coordinates[0][0]>180 || geojson.coordinates[0][0]<-180) ||
     (geojson.coordinates[0][1]>90 || geojson.coordinates[0][1]<-90) ) {
-      modal.style.display = "block";
-        $(".modal-paragraph")[0].innerHTML = 'Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.';
+
+      modalOpen('Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.');
 
       return false;
     }
 
   } else if ( (geojson.coordinates[0][0][0]>180 || geojson.coordinates[0][0][0]<-180) ||
   (geojson.coordinates[0][0][1]>90 || geojson.coordinates[0][0][1]<-90) ) {
-    modal.style.display = "block";
-      $(".modal-paragraph")[0].innerHTML = 'Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.';
+
+    modalOpen('Coordinates are not in Longitude/Latitude.  Please submit file with coordinates in Longitude/Latitude.');
 
     return false;
   }
@@ -290,7 +298,8 @@ function modifyKMLGeoJson(data) {
   geoData.coordinates = [];
 
   if (data.features.length > 1 && data.features[0].geometry.coordinates[0].length <= 3) {
-    data.features.forEach((el) => el.geometry.coordinates.forEach((el)=> geoData.coordinates.push(el)));
+
+    data.features.forEach((el) => el.geometry.coordinates.forEach((el) => geoData.coordinates.push(el)));
 
   } else if (data.features.length === 1 && data.features[0].geometry.coordinates[0][0].length <= 3) {
     data.features[0].geometry.coordinates[0].forEach((el)=> geoData.coordinates.push(el) );
@@ -411,6 +420,13 @@ function modifyZIPGeoJson(data) {
 
 function transformCoordinates(geoData) {
 
+  let centroid = turf.centroid(geoData.geojson);
+
+  let centroidLatLng = {};
+
+  centroidLatLng.lat = centroid.geometry.coordinates[1];
+  centroidLatLng.lng = centroid.geometry.coordinates[0];
+
   let coordinatesTransformed = [];
 
   for (let j=0; j<geoData.coordinates[0].length; j++) {
@@ -422,6 +438,8 @@ function transformCoordinates(geoData) {
 
   geoData.coordinatesTransformed = coordinatesTransformed;
 
+  geoData.centroid = centroidLatLng;
+
   return geoData;
 };
 
@@ -429,13 +447,11 @@ function droneDeployApi(geoData) {
 
   const dd = new DroneDeploy({version:1});
 
-  let options = {name: 'Flight Path', geometry: geoData.coordinatesTransformed};
+  let options = {name: geoData.name, geometry: geoData.coordinatesTransformed};
 
   dd.then(function(droneDeploy) {
     droneDeploy.Plans.create(options).then(function(plan) {
-      console.log('Plan', plan);
+      droneDeploy.Map.panTo(geoData.centroid, {zoom:14});
     });
   });
-
-  return geoData;
 };
