@@ -47,12 +47,14 @@ Due to the varying nature of the geoJSON object returned from each specific file
 
 ## Drone Deploy API
 
-The [DroneDeploy API](https://dronedeploy.gitbooks.io/dronedeploy-apps/) provides methods to turn a shape geometry into a flight path and to zoom into the flight plan view.  To maximize the usage and and efficacy of their App Market platform, the API provides methods to track success and other metrics of apps that users choose to deploy on the platform.  The Track.success method was used to verify the app would be able to be published and monitored on their App Market platform.
+The [DroneDeploy API](https://dronedeploy.gitbooks.io/dronedeploy-apps/) provides methods to turn a shape geometry into a flight path and to zoom into the flight plan view.  To maximize the usage and and efficacy of their App Market platform, the API provides methods to track success and other metrics
+of apps that users choose to deploy on the platform.  The Track.success method was used to verify the app would be able to be published and monitored on their App Market platform.
 
 
 <hr>
 User submits a .kml, .shp, or a .zip file of a geographic area of interest:
-![screen shot 2017-10-29 at 12 43 28 pm](https://user-images.githubusercontent.com/12532173/32150484-cb6c8bac-bcd0-11e7-9c4b-be6dfad71cd1.png)
+
+![screen shot 2017-10-29 at 12 43 28 pm](https://user-images.githubusercontent.com/12532173/32150642-c77443c6-bcd2-11e7-953b-04dced4b4c06.png)
 <hr>
 
 Once flight plan is created, map view pans to vicinity of plan:
