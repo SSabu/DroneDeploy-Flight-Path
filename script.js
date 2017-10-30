@@ -30,12 +30,6 @@ expandRow.addEventListener('click', function(){
 
 $("#input")[0].onchange = function() {
 
-  if (window.File && window.FileReader && window.FileList && window.Blob) {
-    // Great, all File APIs are supported
-  } else {
-    alert("The File APIs are not supported on this browser");
-  }
-
   $("#upload")[0].value = this.value.substring(12);
   var file = $("#input")[0].files[0];
   checkFile(file.name);
