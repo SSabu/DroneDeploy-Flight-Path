@@ -29,7 +29,7 @@ Each library produced geoJSON data in slightly different formats.
     {type: "FeatureCollection", features: [ {type:"Feature", geometry: {..}, properties: {..} } ] };
 
 
-  The SHP to geoJSON converter yielded a data object that looked 9like this:
+  The SHP to geoJSON converter yielded a data object that looked like this:
 
     [{coordinates:[[...]], type: "Polygon"}];
 
@@ -61,5 +61,5 @@ Once flight plan is created, map view pans to vicinity of plan:
 ![screen shot 2017-10-29 at 12 43 56 pm](https://user-images.githubusercontent.com/12532173/32150481-b82dd50a-bcd0-11e7-8e94-86ed7c3d955b.png)
 <hr>
 
-Viewer can click on Flight Plan icon to view detailed drone flight path:
+User can click on Flight Plan icon to view detailed drone flight path:
 ![screen shot 2017-10-29 at 12 45 13 pm](https://user-images.githubusercontent.com/12532173/32150403-8644a880-bccf-11e7-932f-8949be44de70.png)
