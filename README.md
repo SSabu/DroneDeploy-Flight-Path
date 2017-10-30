@@ -4,7 +4,7 @@ The challenge is to create an app that can be deployed on the Drone Deploy App M
 
 ## Solution Outline
 
-The challenge consisted of the following steps:  
+Solving the challenge required taking the following steps:  
 
   1) Finding external libraries that would successfully convert the different file formats into useable geoJSON
   2) Converting the files and verifying the geoJSON data within them was acceptable and did in fact reflect a geographic feature
@@ -15,7 +15,7 @@ The challenge consisted of the following steps:
 
 The following conversion libraries were used:
 
-  1) Tom MacWright has produced a library to [convert KML files to geoJSON](https://github.com/mapbox/togeojson).  jQuery's ajax method was used int he case of the KML to geoJSON converter since the the function required an xml object to process to return the geoJSON data.
+  1) Tom MacWright has produced a library to [convert KML files to geoJSON](https://github.com/mapbox/togeojson).  jQuery's ajax method was used in the case of the KML to geoJSON converter since the the function required an xml object to process to return the geoJSON data.
 
   2) Mike Bostock has produced a library called [Shapefile to convert SHP files to geoJSON](https://github.com/mbostock/shapefile).
 
@@ -37,7 +37,7 @@ Each library produced geoJSON data in slightly different formats.
 
     {type:"Feature", features: [ {type:"Feature", geometry: {..}, properties: {..} } ], fileName:"Limits of flight"}
 
-Due to the varying nature of the geoJSON object returned from each specific file converter, steps were taken to create a standard geoData object that captured relevant data from the GeoJSON object for processing later.
+Due to the varying nature of the geoJSON object returned from each file converter, steps were taken to create a standard geoData object that captured relevant data from the GeoJSON object for processing later.
 
 ### Other libraries used
 
