@@ -26,21 +26,16 @@ Each library produced geoJSON data in slightly different formats.
 
   For example, in the KML to geoJSON converter, the geojson object looked like this:
 
-    ```
     {type: "FeatureCollection", features: [ {type:"Feature", geometry: {..}, properties: {..} } ] };
-    ```
+
 
   The SHP to geoJSON converter yielded a data object that looked 9like this:
 
-    ```
     [{coordinates:[[...]], type: "Polygon"}];
-    ```
 
   The ZIP to geoJSON converter yielded this data object:
 
-    ```
-    {type:"Feature", features: [ {type:"Feature", geometry: {..}, properties: {..} } ], fileName:"Limits of flight"};
-    ```
+    {type:"Feature", features: [ {type:"Feature", geometry: {..}, properties: {..} } ], fileName:"Limits of flight"}
 
 Due to the varying nature of the geoJSON object returned from each specific file converter, steps were taken to create a standard geoData object that captured relevant data from the GeoJSON object for processing later.
 
@@ -57,15 +52,12 @@ The [DroneDeploy API](https://dronedeploy.gitbooks.io/dronedeploy-apps/) provide
 
 <hr>
 User submits a .kml, .shp, or a .zip file of a geographic area of interest:
-<br>
 ![screen shot 2017-10-29 at 12 43 28 pm](https://user-images.githubusercontent.com/12532173/32150484-cb6c8bac-bcd0-11e7-9c4b-be6dfad71cd1.png)
 <hr>
 
 Once flight plan is created, map view pans to vicinity of plan:
-<br>
 ![screen shot 2017-10-29 at 12 43 56 pm](https://user-images.githubusercontent.com/12532173/32150481-b82dd50a-bcd0-11e7-8e94-86ed7c3d955b.png)
 <hr>
 
 Viewer can click on Flight Plan icon to view detailed drone flight path:
-<br>
 ![screen shot 2017-10-29 at 12 45 13 pm](https://user-images.githubusercontent.com/12532173/32150403-8644a880-bccf-11e7-932f-8949be44de70.png)
