@@ -432,11 +432,11 @@ function droneDeployApi(geoData) {
 
   const dd = new DroneDeploy({version:1});
 
-  let options = {name: geoData.name, geometry: geoData.coordinatesTransformed};
+  let options = {geometry: geoData.coordinatesTransformed};
 
   dd.then(function(droneDeploy) {
-    droneDeploy.Plans.create(options).then(function(plan) {
-      droneDeploy.Map.panTo(geoData.centroid, {zoom:14});
+    droneDeploy.Plans.getCurrentlyViewed().then(function(plan) {
+      droneDeploy.Plans.update(plan.id, options);
       droneDeploy.Track.successCondition();
     });
   });
