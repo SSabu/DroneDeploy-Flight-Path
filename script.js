@@ -426,7 +426,7 @@ function transformCoordinates(geoData) {
   return geoData;
 };
 
-// make call to Drone Deploy API, send geoData name of flight, geometry of shape, call Plans.create to generate flight path, zoom to vicinity of area of interest, and call Track.successCondition
+// make call to Drone Deploy API, send geoData name of flight, geometry of shape, call Plans.update to update currently viewed flight path, and call Track.successCondition
 
 function droneDeployApi(geoData) {
 
