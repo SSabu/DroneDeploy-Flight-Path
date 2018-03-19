@@ -47,8 +47,9 @@ Due to the varying nature of the geoJSON object returned from each file converte
 
 ## Drone Deploy API
 
-The [DroneDeploy API](https://dronedeploy.gitbooks.io/dronedeploy-apps/) provides methods to turn a shape geometry into a flight path and to zoom into the flight plan view.  To maximize the usage and and efficacy of their App Market platform, the API provides methods to track success and other metrics
-of apps that users choose to deploy on the platform.  The Track.success method was used to verify the app would be able to be published and monitored on their App Market platform.
+The [DroneDeploy API](https://dronedeploy.gitbooks.io/dronedeploy-apps/) provides methods to turn a shape geometry into a flight path and to zoom into the flight plan view. 
+
+The Flight Plan app can be found [here].(https://www.dronedeploy.com/app-market/flight/dcfgejmwptozjqydkwxn.html)
 
 
 <hr>
