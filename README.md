@@ -1,10 +1,10 @@
-# DroneDeploy - Flight Path Challenge
+# DroneDeploy - Flight Path App
 
 The challenge is to create an app that can be deployed on the Drone Deploy App Market that allows a user to submit a .shp, .kml, or .zip file of an area of interest and generate a drone flight plan for that area.
 
 ## Solution Outline
 
-Solving the challenge required taking the following steps:  
+Creating the app required taking the following steps:  
 
   1) Finding external libraries that would successfully convert the different file formats into useable geoJSON
   2) Converting the files and verifying the geoJSON data within them was acceptable and did in fact reflect a geographic feature
