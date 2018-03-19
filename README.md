@@ -49,7 +49,7 @@ Due to the varying nature of the geoJSON object returned from each file converte
 
 The [DroneDeploy API](https://dronedeploy.gitbooks.io/dronedeploy-apps/) provides methods to turn a shape geometry into a flight path and to zoom into the flight plan view. 
 
-The Flight Plan app can be found [here].(https://www.dronedeploy.com/app-market/flight/dcfgejmwptozjqydkwxn.html)
+The Flight Plan app can be found [here](https://www.dronedeploy.com/app-market/flight/dcfgejmwptozjqydkwxn.html).
 
 
 <hr>
