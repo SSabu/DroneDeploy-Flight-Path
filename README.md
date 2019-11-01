@@ -6,7 +6,7 @@ The challenge is to create an app that can be deployed on the Drone Deploy App M
 
 Creating the app required taking the following steps:  
 
-  1) Finding external libraries that would successfully convert the different file formats into useable geoJSON
+  1) Finding external libraries that would successfully convert the different file formats into usable geoJSON
   2) Converting the files and verifying the geoJSON data within them was acceptable and did in fact reflect a geographic feature
   3) Standardizing the data returned from the different conversion libraries to pass on to the DroneDeploy API
   4) Calling the DroneDeploy API to create the Flight Plan, pan to the vicinity of the plan, and track success of the app
